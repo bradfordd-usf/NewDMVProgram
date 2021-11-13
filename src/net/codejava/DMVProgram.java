@@ -20,7 +20,7 @@ public class DMVProgram {
 				enteredInput = true;
 			}
 		}
-		try {
+		try { 
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
 			String query = "SELECT username FROM \"Users\"";
 			Statement stmt = connection.createStatement();
