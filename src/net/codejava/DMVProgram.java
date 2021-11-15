@@ -184,25 +184,25 @@ public class DMVProgram {
 		if (day > 31 || day < 1) {
 			System.out.println("Please enter a valid day of the month.");
 		}
-		formatDate(year, month, day);
-//		try {
-//			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
-//			String query = "INSERT INTO \"Users\" (\"gender\", \"fname\", \"lname\", \"username\", \"password\", \"address\", \"DOB\") "
-//					+ "VALUES ('" + gender + "', '" + firstName + "', '" + lastName + "', '" +  newUsername + "', '" + accountPassword + "', '" 
-//					+ address + "', '" + year + "-0" + month + "-" + day + "');";      
-//			System.out.println(query);
-//			Statement stmt = connection.createStatement();
-//			int rows = stmt.executeUpdate(query);
-//			if (rows > 0) {
-//				System.out.println("Account Successfully created!");
-//			}
-//			
-//			connection.close();
-//		}
-//		catch (SQLException e) {
-//			System.out.println("Error in connecting to PostgreSQL server");
-//			e.printStackTrace();
-//		}
+		String date = formatDate(year, month, day);
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "INSERT INTO \"users\" (\"gender\", \"firstname\", \"lastname\", \"username\", \"password\", \"address\", \"dob\") "
+					+ "VALUES ('" + gender + "', '" + firstName + "', '" + lastName + "', '" +  newUsername + "', '" + accountPassword + "', '" 
+					+ address + "', '" + date + "');";      
+			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			int rows = stmt.executeUpdate(query);
+			if (rows > 0) {
+				System.out.println("Account Successfully created!");
+			}
+			
+			connection.close();
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
 	}
 	
 	static void Login() {
