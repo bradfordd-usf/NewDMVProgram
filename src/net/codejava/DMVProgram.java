@@ -17,25 +17,45 @@ public class DMVProgram {
 	static String loggedUsername = "";
 	
 	static void scheduleDrivingTest() { //Assume each Driving Test is one hour and testing is from 9-5
-		//First thing we must do is iterate through the list of instructors
-		ResultSet instructors;
+		//First thing we must do is determine what class of license the user is trying to get
+		System.out.println("Please enter the class of license (A, B, C, or E) that you would like to be tested on:");
+		char licenseClass = '\0';
+		String licenseString = scanner.nextLine();
+		licenseClass = licenseString.charAt(0);
+		if (Character.isLowerCase(licenseClass)) {
+			System.out.println("toUpper");
+			licenseClass = Character.toUpperCase(licenseClass);
+			System.out.println(licenseClass);
+		}
+		if (licenseClass != '\0') {
+			if (licenseClass != 'A' && licenseClass != 'B' && licenseClass == 'C' && licenseClass == 'E') {
+				System.out.println("Please Enter A, B, C, or E");
+				scheduleDrivingTest();
+				return;
+			}
+		}
+		else {
+			System.out.println("Please make a selection.");
+			scheduleDrivingTest();
+			return;
+		}
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
-			String query = "SELECT * FROM \"limitedInstructor\"";
+			String query = "SELECT * FROM \"limitedinstructor\";";
 			Statement stmt = connection.createStatement();
 			ResultSet instructors = stmt.executeQuery(query);
+			int numOfChoices = 1;
+			while (instructors.next()) {
+				String instructorFirstName = instructors.getString(1);
+				String instructorLastName = instructors.getString(2);
+				String instructorCredentials = instructors.getString(3);
+				System.out.println("[" + numOfChoices + "] " + instructorFirstName + instructorLastName + instructorCredentials);
+				numOfChoices++;
+			}
 		}
 		catch (SQLException e) {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
-		}
-		int numOfChoices = 1;
-		while (instructors.next()) {
-			String instructorFirstName = instructors.getString(1);
-			String instructorLastName = instructors.getString(2);
-			String instructorCredentials = instructors.getString(3);
-			System.out.println("[" + numOfChoices + "]");
-			numOfChoices++;
 		}
 	}
 	
@@ -146,7 +166,7 @@ public class DMVProgram {
 		String genderString = scanner.nextLine();
 		gender = genderString.charAt(0);
 		if (gender != '\0') {
-			if (gender == '\"' || gender == ';' || gender == ':' ) {
+			if (gender == '\"' || gender == ';' || gender == ':' || gender == '\'') {
 				System.out.println("Gender cannot be a special character (i.e. :, ', or ;.");
 				Register();
 				return;
@@ -424,6 +444,7 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
+		scheduleDrivingTest();
 		System.out.println("Welcome to the DMV Website, please select from the options below what you would like to do:");
 		System.out.println("[1] Login");
 		System.out.println("[2] Create An Account");
