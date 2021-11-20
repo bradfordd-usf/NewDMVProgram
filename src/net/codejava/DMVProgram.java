@@ -14,7 +14,76 @@ public class DMVProgram {
 	static String username = "postgres";
 	static String password = "SeaBiscuit1738#$!";
 	static Scanner scanner = new Scanner(System.in);
+	static String loggedUsername = "";
 	
+	static void scheduleDrivingTest() { //Assume each Driving Test is one hour and testing is from 9-5
+		//First thing we must do is iterate through the list of instructors
+		ResultSet instructors;
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM \"limitedInstructor\"";
+			Statement stmt = connection.createStatement();
+			ResultSet instructors = stmt.executeQuery(query);
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		int numOfChoices = 1;
+		while (instructors.next()) {
+			String instructorFirstName = instructors.getString(1);
+			String instructorLastName = instructors.getString(2);
+			String instructorCredentials = instructors.getString(3);
+			System.out.println("[" + numOfChoices + "]");
+			numOfChoices++;
+		}
+	}
+	
+	static void motoristView() {
+		System.out.println("[1] View Licenses that you currently possess");
+		System.out.println("[2] Schedule Driving Tests");
+		System.out.println("[3] Schedule a Driving Lesson");
+		System.out.println("[4] View Vehicles that you currently have registered");
+		System.out.println("[5] View Licenses that you currently possess");
+		System.out.println("Please enter your selection: ");
+		String buffer = scanner.nextLine();
+		if (buffer.isEmpty()) {
+			System.out.println("Please make a selection.");
+			motoristView();
+			return;
+		}
+		int bufferInt = -1;
+		try {
+			bufferInt = Integer.parseInt(buffer);
+		}
+		catch (NumberFormatException ex){
+	          System.out.println("Please Enter an Integer.");
+	          motoristView();
+	          return;
+	    }
+		if (bufferInt > 5 || bufferInt < 1) {
+			System.out.println("Please Enter an Integer within range.");
+			motoristView();
+			return;
+		}
+		if (bufferInt == 1) {
+			System.out.println("[1] View Licenses that you currently possess");
+		}
+		if (bufferInt == 2) {
+			System.out.println("[2] Schedule Driving Tests");
+			//scheduleDrivingTest
+		}
+		if (bufferInt == 3) {
+			System.out.println("[3] Schedule a Driving Lesson");
+		}
+		if (bufferInt == 4) {
+			System.out.println("[4] View Vehicles that you currently have registered");
+		}
+		if (bufferInt == 5) {
+			System.out.println("[5] View Licenses that you currently possess");
+		}
+		
+	}
 	static boolean checkUsernameAndPasswordValidity(String input) {
 		if ( input.length() < 8 ) {
 			System.out.println("Username cannot be shorter than 8 characters. ");
@@ -43,7 +112,6 @@ public class DMVProgram {
 		else {
 			formattedDate = formattedDate + "-" + String.valueOf(day);
 		}
-		System.out.println(formattedDate);
 		return formattedDate;
 	}
 	
@@ -168,7 +236,7 @@ public class DMVProgram {
 	       return;
 	    }
 		int month = bufferInt;
-		if (month > 12 || month < 0) {
+		if (month > 12 || month < 1) {
 			System.out.println("Please enter a valid month.");
 		}
 		System.out.println("Please enter the day of the year you were born: ");
@@ -190,7 +258,6 @@ public class DMVProgram {
 			String query = "INSERT INTO \"users\" (\"gender\", \"firstname\", \"lastname\", \"username\", \"password\", \"address\", \"dob\") "
 					+ "VALUES ('" + gender + "', '" + firstName + "', '" + lastName + "', '" +  newUsername + "', '" + accountPassword + "', '" 
 					+ address + "', '" + date + "');";      
-			System.out.println(query);
 			Statement stmt = connection.createStatement();
 			int rows = stmt.executeUpdate(query);
 			if (rows > 0) {
@@ -203,8 +270,87 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "INSERT INTO \"motorist\" (\"gender\", \"firstname\", \"lastname\", \"username\", \"password\", \"address\", \"dob\") "
+					+ "VALUES ('" + gender + "', '" + firstName + "', '" + lastName + "', '" +  newUsername + "', '" + accountPassword + "', '" 
+					+ address + "', '" + date + "');";      
+			Statement stmt = connection.createStatement();
+			int rows = stmt.executeUpdate(query);
+			if (rows > 0) {
+				System.out.println("Account Successfully created!");
+			}
+			
+			connection.close();
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		
 	}
-	
+	static void determineView(String acceptedUsername) { //determines what role the user is and selects their view
+		boolean foundRole = false;
+		try {
+				Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+				String query = "SELECT username FROM \"motorist\" WHERE username = '" + acceptedUsername + "' ;";
+				Statement stmt = connection.createStatement();
+				ResultSet rs = stmt.executeQuery(query);
+				if (rs.next() == true) { 
+					foundRole = true; 
+				}
+				connection.close();
+			}
+			catch (SQLException e) {
+				System.out.println("Error connecting to database: determineView");
+				e.printStackTrace();
+			}
+		if (foundRole == true) {
+			loggedUsername = acceptedUsername;
+			motoristView();
+			return;
+		}
+		foundRole = false;
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT username FROM \"instructor\" WHERE username = '" + acceptedUsername + "' ;";
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			if (rs.next() == true) { 
+				foundRole = true;
+			}
+			connection.close();
+		}
+		catch (SQLException e) {
+			System.out.println("Error connecting to database: determineView");
+			e.printStackTrace();
+		}
+		if (foundRole == true) {
+			loggedUsername = acceptedUsername;
+			System.out.println("instructor view");
+			return;
+		}
+		foundRole = false;
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT username FROM \"technician\" WHERE username = '" + acceptedUsername + "' ;";
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			if (rs.next() == true) { 
+				foundRole = true;
+			}
+			connection.close();
+		}
+		catch (SQLException e) {
+			System.out.println("Error connecting to database: determineView");
+			e.printStackTrace();
+		}
+		if (foundRole == true) {
+			loggedUsername = acceptedUsername;
+			System.out.println("going to view: technician");
+			return;
+		}
+	}
 	static void Login() {
 		System.out.println("Please enter your username: ");
 		String loginUsername = "";
@@ -214,17 +360,16 @@ public class DMVProgram {
 			Login();
 			return;
 		}
+		Boolean match = false;
 		try { 
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
-			String query = "SELECT username FROM \"users\"";
 			Statement stmt = connection.createStatement();
+			String query = "SELECT username from Users;";
 			ResultSet rs = stmt.executeQuery(query);
 			while (rs.next()) {
 				String indexedUsername = rs.getString(1);
-		        if (!indexedUsername.equals(loginUsername)) {
-		        	System.out.println("Username not found in database");
-		        	Login();
-		        	return;
+		        if (indexedUsername.equals(loginUsername)) {
+		        	match = true;
 		        }
 		    }
 			connection.close();
@@ -232,6 +377,11 @@ public class DMVProgram {
 		catch (SQLException e) {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
+		}
+		if (match == false) {
+			System.out.println("Username not found in database.");
+			Login();
+			return;
 		}
 		System.out.println("Please enter your password: ");
 		String loginPassword = "";
@@ -258,6 +408,7 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
+		determineView(loginUsername);
 	}
 	
 	public static void main(String[] args) {
