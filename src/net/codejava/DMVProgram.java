@@ -41,7 +41,8 @@ public class DMVProgram {
 		}
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
-			String query = "SELECT * FROM \"limitedinstructor\";";
+			String query = "SELECT * FROM \"" + licenseClass + "instructors\";";
+			System.out.println(query);
 			Statement stmt = connection.createStatement();
 			ResultSet instructors = stmt.executeQuery(query);
 			int numOfChoices = 1;
@@ -49,7 +50,7 @@ public class DMVProgram {
 				String instructorFirstName = instructors.getString(1);
 				String instructorLastName = instructors.getString(2);
 				String instructorCredentials = instructors.getString(3);
-				System.out.println("[" + numOfChoices + "] " + instructorFirstName + instructorLastName + instructorCredentials);
+				System.out.println("[" + numOfChoices + "] " + instructorFirstName + " " + instructorLastName + " " + instructorCredentials);
 				numOfChoices++;
 			}
 		}
