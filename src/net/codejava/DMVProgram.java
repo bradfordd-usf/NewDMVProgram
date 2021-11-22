@@ -24,15 +24,23 @@ public class DMVProgram {
 	
 	static String jdbcURL = "jdbc:postgresql://localhost:5432/DMV";
 	static String username = "postgres";
-	static String password = "SeaBiscuit1738#$!";
+	static String password = "boobsandfeet";
 	static Scanner scanner = new Scanner(System.in);
 	static String loggedUsername = "";
+	
 	static void scheduleTest(char licenseClass) { 
-		//Can only schedule one test for a specific license at a time
-		//May schedule up to two lessons in advance.
-		//Can only schedule one 2-hour test on Monday-Friday during the following times, 
-		//9AM, 11AM, 1PM, 3PM
-		//Can only schedule a lesson three weeks in advance
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM \"drivinglesson\" WHERE class= '" + licenseClass + "';";
+			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+		}
+		
+		catch(SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
 		System.out.println("Rules for scheduling lessons and tests: ");
 		System.out.println("Can only schedule one test for a specific license at a time");
 		System.out.println("May schedule up to two lessons in advance.");
@@ -68,6 +76,7 @@ public class DMVProgram {
 			scheduleTest(licenseClass);
 			return;
 		}
+		
 		
 	}
 	static void scheduleDrivingTest() { //Assume each Driving Test is one hour and testing is from 9-5
@@ -509,7 +518,7 @@ public class DMVProgram {
 	public static void main(String[] args) {
 		String jdbcURL = "jdbc:postgresql://localhost:5432/DMV";
 		String username = "postgres";
-		String password = "SeaBiscuit1738#$!";
+		String password = "boobsandfeet";
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
 			System.out.println("Connected to PostgreSQL server");
