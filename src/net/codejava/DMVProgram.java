@@ -24,7 +24,7 @@ public class DMVProgram {
 	
 	static String jdbcURL = "jdbc:postgresql://localhost:5432/DMV";
 	static String username = "postgres";
-	static String password = "boobsandfeet";
+	static String password = "Morgana1!";
 	static Scanner scanner = new Scanner(System.in);
 	static String loggedUsername = "";
 	
@@ -516,9 +516,6 @@ public class DMVProgram {
 	}
 	
 	public static void main(String[] args) {
-		String jdbcURL = "jdbc:postgresql://localhost:5432/DMV";
-		String username = "postgres";
-		String password = "boobsandfeet";
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
 			System.out.println("Connected to PostgreSQL server");
