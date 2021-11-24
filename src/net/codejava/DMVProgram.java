@@ -26,74 +26,23 @@ public class DMVProgram {
 	static String username = "postgres";
 	static String password = "boobsandfeet";
 	static Scanner scanner = new Scanner(System.in);
-	static String loggedUsername = "";
+	static String loggedUsername = "bradfordd";
 	
-	static void scheduleTest(char licenseClass) { 
-		try {
-			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
-			String query = "SELECT * FROM \"drivinglesson\" WHERE class= '" + licenseClass + "';";
-			System.out.println(query);
-			Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-		}
-		
-		catch(SQLException e) {
-			System.out.println("Error in connecting to PostgreSQL server");
-			e.printStackTrace();
-		}
-		System.out.println("Rules for scheduling lessons and tests: ");
-		System.out.println("Can only schedule one test for a specific license at a time");
-		System.out.println("May schedule up to two lessons in advance.");
-		System.out.println("Can only schedule one 2-hour test on Monday-Friday during the following times: ");
-		System.out.println("9AM, 11AM, 1PM, 3PM");
-		System.out.println("Please enter the date that you wish to take the test (format: YYYY-MM-DD)");
-		String buffer = scanner.nextLine();
-		LocalDate testDate;
-		try {
-			testDate = LocalDate.parse(buffer);
-		}
-		catch(DateTimeParseException e) {
-			System.out.println("Please enter a valid date");
-			scheduleTest(licenseClass);
-			return;
-		}
-		
-		LocalDate currDate = LocalDate.now();
-		long daysBetween = ChronoUnit.DAYS.between(currDate, testDate);
-		if (daysBetween > 21) {
-			System.out.println("Please enter a date that is only three weeks from today.");
-			scheduleTest(licenseClass);
-			return;
-		}
-		if (daysBetween < 1) {
-			System.out.println("Please don't enter today's date or a date that has already passed.");
-			scheduleTest(licenseClass);
-			return;
-		}
-		DayOfWeek dayOfWeek = DayOfWeek.from(testDate);
-		if(dayOfWeek.name() == "SATURDAY" || dayOfWeek.name() == "SUNDAY") {
-			System.out.println("Please enter a date that doesn't occur on Saturday or Sunday.");
-			scheduleTest(licenseClass);
-			return;
-		}
-		
-		
-	}
-	static void scheduleDrivingTest() { //Assume each Driving Test is one hour and testing is from 9-5
+	static void scheduleDrivingTest() { //Assume each Driving Test is two hour and testing is from 9-5
 		//First thing we must do is determine what class of license the user is trying to get
 		System.out.println("Please enter the class of license (A, B, C, or E) that you would like to be tested on:");
 		char licenseClass = '\0';
 		int numOfChoices = 1;
 		String licenseString = scanner.nextLine();
 		licenseClass = licenseString.charAt(0);
-		Vector selectableInstructors = new Vector(0);
+		Vector<String> selectableInstructors = new Vector(0);
 		if (Character.isLowerCase(licenseClass)) {
 			System.out.println("toUpper");
 			licenseClass = Character.toUpperCase(licenseClass);
 			System.out.println(licenseClass);
 		}
 		if (licenseClass != '\0') {
-			if (licenseClass != 'A' && licenseClass != 'B' && licenseClass == 'C' && licenseClass == 'E') {
+			if (!(licenseClass != 'A' || licenseClass != 'B' || licenseClass == 'C' || licenseClass == 'E')) {
 				System.out.println("Please Enter A, B, C, or E");
 				scheduleDrivingTest();
 				return;
@@ -106,16 +55,35 @@ public class DMVProgram {
 		}
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
-			String query = "SELECT * FROM \"" + licenseClass + "instructors\";";
+			licenseClass = Character.toLowerCase(licenseClass);
+			String query = "SELECT * FROM \"drivingtest\" WHERE class= '" + Character.toUpperCase(licenseClass) + "' AND motorist='" + loggedUsername + "';";
 			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				System.out.println("You cannot schedule more than one test for a particular license class.");
+				return;
+			}
+		}
+		
+		catch(SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM \"" + licenseClass + "instructors\";";
+			//System.out.println(query);
 			Statement stmt = connection.createStatement();
 			ResultSet instructors = stmt.executeQuery(query);
 			while (instructors.next()) {
+				//System.out.println(instructors);
 				String instructorFirstName = instructors.getString(1);
 				String instructorLastName = instructors.getString(2);
 				String instructorCredentials = instructors.getString(3);
 				System.out.println("[" + numOfChoices + "] " + instructorFirstName + " " + instructorLastName + " " + instructorCredentials);
 				String entry = instructorFirstName + " " + instructorLastName + " " + instructorCredentials;
+				System.out.println(entry);
 				selectableInstructors.add(entry);
 				numOfChoices++;
 			}
@@ -124,6 +92,8 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
+		//We now know what class of license the motorist is testing for
+		System.out.println(selectableInstructors);
 		System.out.println("Please select an instructor: ");
 		String buffer = scanner.nextLine();
 		int bufferInt = 0;
@@ -136,11 +106,99 @@ public class DMVProgram {
 	       return;
 	    }
 		if (bufferInt < 1 || bufferInt > numOfChoices) {
-			System.out.println("Please Enter an Integer within range.");
+			System.out.println("Instructor Selected.");
+		}
+		int choice = bufferInt;
+		String selection = selectableInstructors.get(choice - 1);
+		String[] selectionArray = selection.split(" ", 0);
+		System.out.println(selectionArray[0]);
+		System.out.println("Below are all of this instructor's taken appointment times");
+		//I'm going to do my query to show the user all that instructors scheduled appointments
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM bookedAppointments WHERE instructor = '" + selectionArray[0] + "';";
+			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				String appointmentTime = rs.getString(1);
+				Date appointmentDate = rs.getDate(2);
+				String appointment = appointmentTime + " " + appointmentDate;
+				System.out.println(appointment);
+			}
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		System.out.println("Rules for scheduling lessons and tests: ");
+		System.out.println("Can only schedule one 2-hour test on Monday-Friday during the following times: ");
+		System.out.println("9AM, 11AM, 1PM, 3PM");
+		System.out.println("Please enter the date that you wish to take the test (format: YYYY-MM-DD)");
+		buffer = scanner.nextLine();
+		LocalDate testDate;
+		try {
+			testDate = LocalDate.parse(buffer);
+		}
+		catch(DateTimeParseException e) {
+			System.out.println("Please enter a valid date");
 			scheduleDrivingTest();
 			return;
 		}
-		//schedule meeting with instructor
+		LocalDate currDate = LocalDate.now();
+		long daysBetween = ChronoUnit.DAYS.between(currDate, testDate);
+		if (daysBetween > 21) {
+			System.out.println("Please enter a date that is only three weeks from today.");
+			scheduleDrivingTest();
+			return;
+		}
+		if (daysBetween < 1) {
+			System.out.println("Please don't enter today's date or a date that has already passed.");
+			scheduleDrivingTest();
+			return;
+		}
+		DayOfWeek dayOfWeek = DayOfWeek.from(testDate);
+		if(dayOfWeek.name() == "SATURDAY" || dayOfWeek.name() == "SUNDAY") {
+			System.out.println("Please enter a date that doesn't occur on Saturday or Sunday.");
+			scheduleDrivingTest();
+			return;
+		}
+		System.out.println("Please enter the time in which you want to take the test on that day. (9, 11, 1, or 3)");
+		buffer = scanner.nextLine();
+		String selectedTime;
+		if (buffer.contains("9")) {
+			selectedTime = "9AM";
+		}
+		else if (buffer.contains("11")) {
+			selectedTime = "11AM";
+		}
+		else if (buffer.contains("1")) {
+			selectedTime = "1PM";
+		}
+		else if (buffer.contains("3")) {
+			selectedTime = "3PM";
+		}
+		else {
+			System.out.println("Please enter a valid time");
+			scheduleDrivingTest();
+			return;
+		}
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM bookedAppointments WHERE instructor = '" + testDate + "'  AND time = '" + selectedTime + "';";
+			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			if (rs.next()) {
+				System.out.println("Please book a time and appointment at a time and date that are not taken.");
+				scheduleDrivingTest();
+				return;
+			}
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
 	}
 	
 	static void motoristView() {
@@ -528,7 +586,7 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
-		scheduleTest('A');
+		scheduleDrivingTest();
 		System.out.println("Welcome to the DMV Website, please select from the options below what you would like to do:");
 		System.out.println("[1] Login");
 		System.out.println("[2] Create An Account");
