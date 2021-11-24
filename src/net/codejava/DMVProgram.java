@@ -26,7 +26,7 @@ public class DMVProgram {
 	static String username = "postgres";
 	static String password = "boobsandfeet";
 	static Scanner scanner = new Scanner(System.in);
-	static String loggedUsername = "bradfordd";
+	static String loggedUsername = "bradfordy";
 	
 	static void scheduleDrivingTest() { //Assume each Driving Test is two hour and testing is from 9-5
 		//First thing we must do is determine what class of license the user is trying to get
@@ -64,6 +64,7 @@ public class DMVProgram {
 				System.out.println("You cannot schedule more than one test for a particular license class.");
 				return;
 			}
+			connection.close();
 		}
 		
 		catch(SQLException e) {
@@ -87,6 +88,7 @@ public class DMVProgram {
 				selectableInstructors.add(entry);
 				numOfChoices++;
 			}
+			connection.close();
 		}
 		catch (SQLException e) {
 			System.out.println("Error in connecting to PostgreSQL server");
@@ -126,6 +128,7 @@ public class DMVProgram {
 				String appointment = appointmentTime + " " + appointmentDate;
 				System.out.println(appointment);
 			}
+			connection.close();
 		}
 		catch (SQLException e) {
 			System.out.println("Error in connecting to PostgreSQL server");
@@ -193,6 +196,22 @@ public class DMVProgram {
 				System.out.println("Please book a time and appointment at a time and date that are not taken.");
 				scheduleDrivingTest();
 				return;
+			}
+			connection.close();
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "INSERT INTO drivingtest (testID, class, time, date, instructor, motorist)"
+			+ "VALUES (uuid_generate_v4(), '" + Character.toUpperCase(licenseClass) + "','" + selectedTime + "', '" + testDate + "', '" + 
+			selectionArray[0] + "', '" + loggedUsername + "');";
+			Statement stmt = connection.createStatement();
+			int rows = stmt.executeUpdate(query);
+			if (rows > 0) {
+				System.out.println("Test Scheduled!");
 			}
 		}
 		catch (SQLException e) {
@@ -298,6 +317,7 @@ public class DMVProgram {
 		        	return;
 		        }
 		    }
+			connection.close();
 		}
 		catch (SQLException e) {
 			System.out.println("Error in connecting to PostgreSQL server");
