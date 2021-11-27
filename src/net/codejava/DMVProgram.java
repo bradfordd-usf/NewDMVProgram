@@ -22,7 +22,7 @@ import java.time.DayOfWeek;
 
 public class DMVProgram {
 	
-	static String jdbcURL = "jdbc:postgresql://localhost:5432/DMV";
+	static String jdbcURL = "jdbc:postgresql://localhost:5433/myDB";
 	static String username = "postgres";
 	static String password = "Morgana1!";
 	static Scanner scanner = new Scanner(System.in);
@@ -141,6 +141,33 @@ public class DMVProgram {
 			return;
 		}
 		//schedule meeting with instructor
+	}
+	
+	static void technicianView()
+	{
+		System.out.println("[1] Issue licenses");
+		System.out.println("[2] Register Vehicles");
+		System.out.println("[3] Add New Instructors to the database");
+		String buffer = scanner.nextLine();
+		if (buffer.isEmpty()) {
+			System.out.println("Please make a selection.");
+			technicianView();
+			return;
+		}
+		int bufferInt = -1;
+		try {
+			bufferInt = Integer.parseInt(buffer);
+		}
+		catch (NumberFormatException ex){
+	          System.out.println("Please Enter an Integer.");
+	          technicianView();
+	          return;
+	    }if (bufferInt > 3 || bufferInt < 1) {
+			System.out.println("Please Enter an Integer within range.");
+			technicianView();
+			return;
+		}
+		
 	}
 	
 	static void motoristView() {
@@ -525,7 +552,7 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
-		scheduleTest('A');
+		//scheduleTest('A');
 		System.out.println("Welcome to the DMV Website, please select from the options below what you would like to do:");
 		System.out.println("[1] Login");
 		System.out.println("[2] Create An Account");
