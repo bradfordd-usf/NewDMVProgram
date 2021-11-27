@@ -28,6 +28,88 @@ public class DMVProgram {
 	static Scanner scanner = new Scanner(System.in);
 	static String loggedUsername = "bradfordy";
 	
+//	static void issueLicense() {
+//		System.out.println("Below is a list of all completed tests in which the motorist passed the test.");
+//		try {
+//			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+//			String query = "SELECT * FROM \"completedtest\";";
+//			System.out.println(query);
+//			Statement stmt = connection.createStatement();
+//			ResultSet rs = stmt.executeQuery(query);
+//			while (rs.next()) {
+//				String instructorFirstName = rs.getString(1);
+//				String instructorLastName = rs.getString(2);
+//				String instructorCredentials = rs.getString(3);
+//			}
+//			connection.close();
+//		}
+//		
+//		catch(SQLException e) {
+//			System.out.println("Error in connecting to PostgreSQL server");
+//			e.printStackTrace();
+//		}
+//	}
+//	static void technicianView() {
+//		System.out.println("[1] Issue licenses");
+//		System.out.println("[2] Register Vehicles");
+//		System.out.println("[3] Add New Instructors to the database");
+//		String buffer = scanner.nextLine();
+//		if (buffer.isEmpty()) {
+//			System.out.println("Please make a selection.");
+//			technicianView();
+//			return;
+//		}
+//		int bufferInt = -1;
+//		try {
+//			bufferInt = Integer.parseInt(buffer);
+//		}
+//		catch (NumberFormatException ex){
+//	          System.out.println("Please Enter an Integer.");
+//	          technicianView();
+//	          return;
+//	    }
+//		if (bufferInt > 3 || bufferInt < 1) {
+//			System.out.println("Please Enter an Integer within range.");
+//			technicianView();
+//			return;
+//		}
+//		if (bufferInt == 1) {
+//			System.out.println("[1] Issue licenses");
+//		}
+//		if (bufferInt == 2) {
+//			System.out.println("[2] Register Vehicles");
+//			//scheduleDrivingTest
+//		}
+//		if (bufferInt == 3) {
+//			System.out.println("[3] Add New Instructors to the database");
+//		}
+//	}
+	static void viewYourVehicles() {
+		System.out.println("Here is a list of your vehicles:");
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM \"vehicle\" WHERE owner= '" + loggedUsername + "';";
+			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				String vid = rs.getString(1);
+				String owner = rs.getString(2);
+				String technician = rs.getString(3);
+				String manufacturer = rs.getString(4);
+				int odometer = rs.getInt(5);
+				String model = rs.getString(6);
+				int year = rs.getInt(7);
+				System.out.println("VID: [" + vid + "] " + manufacturer + " " + model + " " + String.valueOf(year) + " odometer: " + String.valueOf(odometer));
+			}
+			connection.close();
+		}
+		
+		catch(SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+	}
 	static void scheduleDrivingLesson() {
 		System.out.println("Please enter the class of license (A, B, C, or E) that you would like to take lessons for:");
 		char licenseClass = '\0';
@@ -219,6 +301,7 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
+		motoristView();
 	}
 	
 	static void scheduleDrivingTest() { //Assume each Driving Test is two hour and testing is from 9-5
@@ -411,6 +494,7 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
+		motoristView();
 	}
 	
 	static void motoristView() {
@@ -444,14 +528,13 @@ public class DMVProgram {
 			System.out.println("[1] View Licenses that you currently possess");
 		}
 		if (bufferInt == 2) {
-			System.out.println("[2] Schedule Driving Tests");
-			//scheduleDrivingTest
+			scheduleDrivingTest();
 		}
 		if (bufferInt == 3) {
-			System.out.println("[3] Schedule a Driving Lesson");
+			scheduleDrivingLesson();
 		}
 		if (bufferInt == 4) {
-			System.out.println("[4] View Vehicles that you currently have registered");
+			viewYourVehicles();
 		}
 		if (bufferInt == 5) {
 			System.out.println("[5] View Licenses that you currently possess");
@@ -459,7 +542,6 @@ public class DMVProgram {
 		if (bufferInt == 6) {
 			System.out.println("[6] View your scheduled tests and lessons and tests you've previously taken.");
 		}
-		
 	}
 	static boolean checkUsernameAndPasswordValidity(String input) {
 		if ( input.length() < 8 ) {
@@ -802,7 +884,7 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
-		scheduleDrivingTest();
+		viewYourVehicles();
 		System.out.println("Welcome to the DMV Website, please select from the options below what you would like to do:");
 		System.out.println("[1] Login");
 		System.out.println("[2] Create An Account");
