@@ -22,7 +22,7 @@ import java.time.DayOfWeek;
 
 public class DMVProgram {
 	
-	static String jdbcURL = "jdbc:postgresql://localhost:5433/myDB";
+	static String jdbcURL = "jdbc:postgresql://localhost:5433/DMV";
 	static String username = "postgres";
 	static String password = "Morgana1!";
 	static Scanner scanner = new Scanner(System.in);
@@ -143,6 +143,34 @@ public class DMVProgram {
 		//schedule meeting with instructor
 	}
 	
+	static void issueLicense()
+	{
+		
+		int numChoices = 1;
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM completedtest;";
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			while(rs.next())
+			{
+				String motorist = rs.getString(6);
+				//Date date = rs.getDate(3);
+				//int score = rs.getInt(6);
+				//String pass = rs.getString(7);
+				System.out.println("[" + numChoices + "]" +  motorist);
+				numChoices++;
+				
+			}
+			connection.close();
+		}
+		catch(SQLException e)
+		{
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+	}
+	
 	static void technicianView()
 	{
 		System.out.println("[1] Issue licenses");
@@ -162,10 +190,15 @@ public class DMVProgram {
 	          System.out.println("Please Enter an Integer.");
 	          technicianView();
 	          return;
-	    }if (bufferInt > 3 || bufferInt < 1) {
+	    }
+		if (bufferInt > 3 || bufferInt < 1) {
 			System.out.println("Please Enter an Integer within range.");
 			technicianView();
 			return;
+		}
+		if(bufferInt==1)
+		{
+			issueLicense();
 		}
 		
 	}
@@ -479,6 +512,7 @@ public class DMVProgram {
 		if (foundRole == true) {
 			loggedUsername = acceptedUsername;
 			System.out.println("going to view: technician");
+			technicianView();
 			return;
 		}
 	}
