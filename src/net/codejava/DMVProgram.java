@@ -501,7 +501,7 @@ public class DMVProgram {
 			e.printStackTrace();
 		}
 		
-		technicianView(currentUser)
+		technicianView(currentUser);
 	}
 	
 	static void technicianView(String currentUser)
