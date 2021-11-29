@@ -143,13 +143,14 @@ public class DMVProgram {
 		//schedule meeting with instructor
 	}
 	
-	static void issueLicense()
+	static void issueLicense(String currentUser)
 	{
 		
 		int numChoices = 1;
+		Vector<String> selections = new Vector(0);
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
-			String query = "SELECT * FROM completedtest;";
+			String query = "SELECT * FROM completedtest WHERE pass = 'P';";
 			Statement stmt = connection.createStatement();
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next())
@@ -157,9 +158,11 @@ public class DMVProgram {
 				String motorist = rs.getString(6);
 				//Date date = rs.getDate(3);
 				//int score = rs.getInt(6);
-				//String pass = rs.getString(7);
-				System.out.println("[" + numChoices + "]" +  motorist);
+				String licenceClass = rs.getString(2);
+				System.out.println("[" + numChoices + "]" +  motorist + " " + licenceClass);
 				numChoices++;
+				String entry = motorist + " " + licenceClass;
+				selections.add(entry);
 				
 			}
 			connection.close();
@@ -169,9 +172,64 @@ public class DMVProgram {
 			System.out.println("Error in connecting to PostgreSQL server");
 			e.printStackTrace();
 		}
+		
+		System.out.println("Which motorist would you like to issue license too:");
+		String buffer = scanner.nextLine();
+		int bufferInt = 0;
+		try {
+			bufferInt = Integer.parseInt(buffer);
+		}
+		catch(NumberFormatException ex)
+		{
+			System.out.println("Please Enter an Integer.");
+			issueLicense(username);
+			return;
+		}
+		if(!(bufferInt < 1 || bufferInt > numChoices))
+		{
+			System.out.println("Motorist Selected.");
+		}
+		String selection = selections.get(bufferInt - 1);
+		String[] selectionArray = selection.split(" ", 0);
+		
+		String lisenceNum = "XXXXXX";
+		LocalDate date = LocalDate.parse("2000-02-02");
+		LocalDate exDate = LocalDate.parse("2010-02-02");
+		String restrictions = "NONE";
+		String cl = selectionArray[1];
+		String user = selectionArray[0];
+		
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "INSERT INTO License (licensenum,issuedate,expirationdate,restrictions,class,motorist,technician) VALUES (";
+			query += "'" + lisenceNum + "',";
+			query += "'" + date + "',";
+			query += "'" + exDate + "',";
+			query += "'" + restrictions + "',";
+			query += "'" + cl + "',";
+			query += "'" + user + "',";
+			query += "'" + currentUser + "');";
+			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			int rows = stmt.executeUpdate(query);
+			if (rows > 0) {
+				System.out.println("Licence Created");
+			}
+			
+			connection.close();
+		}
+		catch(SQLException e)
+		{
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		
+		technicianView(currentUser);
+		
+		
 	}
 	
-	static void technicianView()
+	static void technicianView(String currentUser)
 	{
 		System.out.println("[1] Issue licenses");
 		System.out.println("[2] Register Vehicles");
@@ -179,7 +237,7 @@ public class DMVProgram {
 		String buffer = scanner.nextLine();
 		if (buffer.isEmpty()) {
 			System.out.println("Please make a selection.");
-			technicianView();
+			technicianView(currentUser);
 			return;
 		}
 		int bufferInt = -1;
@@ -188,17 +246,17 @@ public class DMVProgram {
 		}
 		catch (NumberFormatException ex){
 	          System.out.println("Please Enter an Integer.");
-	          technicianView();
+	          technicianView(currentUser);
 	          return;
 	    }
 		if (bufferInt > 3 || bufferInt < 1) {
 			System.out.println("Please Enter an Integer within range.");
-			technicianView();
+			technicianView(currentUser);
 			return;
 		}
 		if(bufferInt==1)
 		{
-			issueLicense();
+			issueLicense(currentUser);
 		}
 		
 	}
@@ -512,7 +570,7 @@ public class DMVProgram {
 		if (foundRole == true) {
 			loggedUsername = acceptedUsername;
 			System.out.println("going to view: technician");
-			technicianView();
+			technicianView(acceptedUsername);
 			return;
 		}
 	}
