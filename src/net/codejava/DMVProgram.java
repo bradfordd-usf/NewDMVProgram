@@ -143,6 +143,18 @@ public class DMVProgram {
 		//schedule meeting with instructor
 	}
 	
+	static boolean checkForSQLInjection(String input) 
+	{
+		if (input.contains(";") || input.contains("\"") || input.contains(":") || input.contains("\'"))
+		{
+			System.out.println("Input cannot contain special characters ';', ', '\"', or ':' ");
+			return false;
+		}
+		return true;
+	}
+	
+	
+	//Issues License to motorists who have completed the driving test with a passing grade
 	static void issueLicense(String currentUser)
 	{
 		
@@ -156,10 +168,8 @@ public class DMVProgram {
 			while(rs.next())
 			{
 				String motorist = rs.getString(6);
-				//Date date = rs.getDate(3);
-				//int score = rs.getInt(6);
 				String licenceClass = rs.getString(2);
-				System.out.println("[" + numChoices + "]" +  motorist + " " + licenceClass);
+				System.out.println("[" + numChoices + "] Motorist: " +  motorist + " Class: " + licenceClass);
 				numChoices++;
 				String entry = motorist + " " + licenceClass;
 				selections.add(entry);
@@ -173,6 +183,7 @@ public class DMVProgram {
 			e.printStackTrace();
 		}
 		
+		//choose motorist
 		System.out.println("Which motorist would you like to issue license too:");
 		String buffer = scanner.nextLine();
 		int bufferInt = 0;
@@ -192,18 +203,150 @@ public class DMVProgram {
 		String selection = selections.get(bufferInt - 1);
 		String[] selectionArray = selection.split(" ", 0);
 		
-		String lisenceNum = "XXXXXX";
-		LocalDate date = LocalDate.parse("2000-02-02");
-		LocalDate exDate = LocalDate.parse("2010-02-02");
-		String restrictions = "NONE";
+		
+		//chose license number
+		String licenseNum = "";
+		
+		char choice0 = '\0';
+		boolean completed0 = false;
+		do {
+			System.out.println("Would you like to specify a Licence Plate Number for this license? (Y/N)");
+			buffer = scanner.nextLine();
+			if (buffer.isEmpty()) {
+				System.out.println("Please make a selection");
+				continue;
+			}
+			choice0 = buffer.charAt(0);
+			Character.toUpperCase(choice0);
+			if (choice0 != 'Y' && choice0 != 'N') {
+				System.out.println("Please make a selection");
+				continue;
+			}
+			completed0 = true;
+		} while (!completed0);
+		completed0 = false;
+		
+		if (choice0 == 'N') {
+			try {
+				Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+				String query = "SELECT uuid_generate_v4()::text;";
+				Statement stmt = connection.createStatement();
+				ResultSet rs = stmt.executeQuery(query);
+				while(rs.next())
+				{
+					licenseNum = rs.getString(1);
+				}
+				
+				connection.close();
+			}
+			catch(SQLException e)
+			{
+				System.out.println("Error in connecting to PostgreSQL server");
+				e.printStackTrace();
+			}
+			
+		} 
+		if (choice0 == 'Y') {
+			do {
+				System.out.println("Please specify the License Number you would like to have for this vehicle.");
+				buffer = scanner.nextLine();
+				if (buffer.isEmpty()) {
+					System.out.println("Please enter the License Number");
+					continue;
+				}
+				if (!checkForSQLInjection(buffer)) {
+					boolean repeat = false;
+					try {
+						Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+						String query = "SELECT * FROM license WHERE licensenum = '" + buffer + "';";
+						Statement stmt = connection.createStatement();
+						ResultSet rs = stmt.executeQuery(query);
+						if (rs.next())
+						{
+							System.out.println("License Number already exists in database.");
+							repeat = true;
+						}
+						
+						connection.close();
+					}
+					catch(SQLException e)
+					{
+						System.out.println("Error in connecting to PostgreSQL server");
+						e.printStackTrace();
+					}
+					if (repeat) {
+						continue;
+					}
+				}
+				else {
+					continue;
+				}
+				licenseNum = buffer;
+				completed0 = true;
+			} while (!completed0);
+			completed0 = false;
+		}
+		
+		
+		//choose restrictions
+		String restrictions = "";
+		char choice1 = '\0';
+		boolean completed1 = false;
+		do {
+			System.out.println("Would you like to specify restrictions for this license? (Y/N)");
+			buffer = scanner.nextLine();
+			if (buffer.isEmpty()) {
+				System.out.println("Please make a selection");
+				continue;
+			}
+			choice1 = buffer.charAt(0);
+			Character.toUpperCase(choice1);
+			if (choice1 != 'Y' && choice1 != 'N') {
+				System.out.println("Please make a selection");
+				continue;
+			}
+			completed1 = true;
+		} while (!completed1);
+		completed1 = false;
+		
+		if (choice1 == 'N') {
+			restrictions = "NONE";
+			
+		} 
+		if (choice1 == 'Y') {
+			do {
+				System.out.println("Please specify the restrictions you would like to give this license:");
+				buffer = scanner.nextLine();
+				if (buffer.isEmpty()) {
+					System.out.println("Please enter the restrictions:");
+					continue;
+				}
+				restrictions = buffer;
+				completed1 = true;
+			} while (!completed1);
+			completed1 = false;
+		}
+		
+		
+		
+		//get date issued
+		LocalDate issueDate = LocalDate.now();
+		
+		//expiration date
+		LocalDate exDate = addTenYearsToDate(issueDate);
+		
+		//class
 		String cl = selectionArray[1];
+		
+		//motorist to issue license
 		String user = selectionArray[0];
 		
+		//create insert query
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
 			String query = "INSERT INTO License (licensenum,issuedate,expirationdate,restrictions,class,motorist,technician) VALUES (";
-			query += "'" + lisenceNum + "',";
-			query += "'" + date + "',";
+			query += "'" + licenseNum + "',";
+			query += "'" + issueDate + "',";
 			query += "'" + exDate + "',";
 			query += "'" + restrictions + "',";
 			query += "'" + cl + "',";
@@ -228,6 +371,10 @@ public class DMVProgram {
 		
 		
 	}
+	
+	static LocalDate addTenYearsToDate(LocalDate currDate) {
+        return currDate.plusYears(10);
+    }
 	
 	static void registerVehicles(String currentUser)
 	{
@@ -272,13 +419,171 @@ public class DMVProgram {
 			System.out.println("Motorist Selected.");
 		}
 		
-		String vid = "d33223";
+		String vid = "";
 		String user = selections.get(bufferInt - 1);
-		String manu = "Honda";
-		int oduo = 123445;
-		String model = "Civic";
-		int year = 2012;
+		String manu = "";
+		int oduo = -1;
+		String model = "";
+		int year = -1;
 		
+		
+		char choice = '\0';
+		boolean completed = false;
+		do {
+			System.out.println("Would you like to specify a VID for this vehicle? (Y/N)");
+			buffer = scanner.nextLine();
+			if (buffer.isEmpty()) {
+				System.out.println("Please make a selection");
+				continue;
+			}
+			choice = buffer.charAt(0);
+			Character.toUpperCase(choice);
+			if (choice != 'Y' && choice != 'N') {
+				System.out.println("Please make a selection");
+				continue;
+			}
+			completed = true;
+		} while (!completed);
+		completed = false;
+		
+		if (choice == 'N') {
+			try {
+				Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+				String query = "SELECT uuid_generate_v4()::text;";
+				Statement stmt = connection.createStatement();
+				ResultSet rs = stmt.executeQuery(query);
+				while(rs.next())
+				{
+					vid = rs.getString(1);
+				}
+				
+				connection.close();
+			}
+			catch(SQLException e)
+			{
+				System.out.println("Error in connecting to PostgreSQL server");
+				e.printStackTrace();
+			}
+			
+		} 
+		if (choice == 'Y') {
+			do {
+				System.out.println("Please specify the VID you would like to have for this vehicle.");
+				buffer = scanner.nextLine();
+				if (buffer.isEmpty()) {
+					System.out.println("Please enter the VID");
+					continue;
+				}
+				if (!checkForSQLInjection(buffer)) {
+					boolean repeat = false;
+					try {
+						Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+						String query = "SELECT * FROM vehicle WHERE VID = '" + buffer + "';";
+						Statement stmt = connection.createStatement();
+						ResultSet rs = stmt.executeQuery(query);
+						if (rs.next())
+						{
+							System.out.println("VID already exists in database.");
+							repeat = true;
+						}
+						
+						connection.close();
+					}
+					catch(SQLException e)
+					{
+						System.out.println("Error in connecting to PostgreSQL server");
+						e.printStackTrace();
+					}
+					if (repeat) {
+						continue;
+					}
+				}
+				else {
+					continue;
+				}
+				vid = buffer;
+				completed = true;
+			} while (!completed);
+			completed = false;
+		}
+		do {
+			System.out.println("please enter the manufacturer");
+			buffer = scanner.nextLine();
+			if (buffer.isEmpty()) {
+				continue;
+			}
+			if (checkForSQLInjection(buffer)) { 
+				continue;
+			} 
+			manu = buffer;
+			completed = true;
+		} while (!completed); 
+		completed = false;
+		do {
+			System.out.println("please enter the model");
+			buffer = scanner.nextLine();
+			if (buffer.isEmpty()) {
+				continue;
+			}
+			if (checkForSQLInjection(buffer)) { 
+				continue;
+			} 
+			model = buffer;
+			completed = true;
+		} while (!completed); 
+		completed = false;
+		do {
+			System.out.println("please enter the year");
+			buffer = scanner.nextLine();
+			bufferInt = 0;
+			if (buffer.isEmpty()) {
+				continue;
+			}
+			if (checkForSQLInjection(buffer)) { 
+				continue;
+			} 
+			try {
+				bufferInt = Integer.parseInt(buffer);
+			}
+			catch(NumberFormatException ex)
+			{
+				System.out.println("Please Enter an Integer.");
+				continue;
+			}
+			if (bufferInt >= 2030 || bufferInt < 1900) {
+				System.out.println("Please Enter a valid year.");
+				continue;
+			}
+			year = bufferInt;
+			completed = true;
+		} while (!completed); 
+		completed = false;
+		do {
+			System.out.println("please enter the reading on the odometer.");
+			buffer = scanner.nextLine();
+			bufferInt = 0;
+			if (buffer.isEmpty()) {
+				continue;
+			}
+			if (checkForSQLInjection(buffer)) { 
+				continue;
+			} 
+			try {
+				bufferInt = Integer.parseInt(buffer);
+			}
+			catch(NumberFormatException ex)
+			{
+				System.out.println("Please Enter an Integer.");
+				continue;
+			}
+			if (bufferInt < 0) {
+				System.out.println("Please Enter a valid reading.");
+				continue;
+			}
+			oduo = bufferInt;
+			completed = true;
+		} while (!completed); 
+		completed = false;
 		try {
 			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
 			String query = "INSERT INTO vehicle (VID,owner,technician,manufacturer,oduometer,model,year) VALUES (";
