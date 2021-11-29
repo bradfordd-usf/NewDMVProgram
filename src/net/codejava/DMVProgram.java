@@ -308,9 +308,200 @@ public class DMVProgram {
 		
 	}
 	
-	static void addTechnician()
+	static void addTechnician(String currentUser)
 	{
+		System.out.println("Please enter the username you would like the technician to have for the account: ");
+		String newUsername = "";
+		newUsername = scanner.nextLine();
+		if (!checkUsernameAndPasswordValidity(newUsername)) {
+			addTechnician(currentUser);
+			return;
+		}
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT username FROM \"users\"";
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				String indexedUsername = rs.getString(1);
+		        if (indexedUsername.equals(newUsername)) {
+		        	System.out.println("A User with this username already exists");
+		        	addTechnician(currentUser);
+		        	return;
+		        }
+		    }
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		System.out.println("Please enter your gender(M/F/N/P (Prefer not to answer)): ");
+		char gender = '\0';
+		String genderString = scanner.nextLine();
+		gender = genderString.charAt(0);
+		if (gender != '\0') {
+			if (gender == '\"' || gender == ';' || gender == ':' || gender == '\'') {
+				System.out.println("Gender cannot be a special character (i.e. :, ', or ;.");
+				addTechnician(currentUser);
+				return;
+			}
+		}
+		else {
+			System.out.println("Please Enter a gender.");
+			addTechnician(currentUser);
+			return;
+		}
+		System.out.println("Please enter your firstName: ");
+		String firstName = "";
+		firstName = scanner.nextLine();
+		if (firstName.isEmpty()) {
+			System.out.println("please enter your first name");
+			addTechnician(currentUser);
+			return;
+		}
+		else {
+			if (firstName.contains(";") || firstName.contains("\"") || firstName.contains(":") || firstName.contains("\'")) {
+				System.out.println("first name cannot contain special characters ';', ', '\"', or ':' ");
+				addTechnician(currentUser);
+				return;
+			}
+		}
+		System.out.println("Please enter your lastName: ");
+		String lastName = "";
+		lastName = scanner.nextLine();
+		if (lastName.isEmpty()) {
+			System.out.println("please enter your last name");
+			addTechnician(currentUser);
+			return;
+		}
+		else {
+			if (lastName.contains(";") || lastName.contains("\"") || lastName.contains(":") || lastName.contains("\'")) {
+				System.out.println("last name cannot contain special characters ';', ', '\"', or ':' ");
+				addTechnician(currentUser);
+				return;
+			}
+		}
+		System.out.println("Please initialize the accounts password: ");
+		String accountPassword = "";
+		accountPassword = scanner.nextLine();
+		if (!checkUsernameAndPasswordValidity(accountPassword)) {
+			addTechnician(currentUser);
+			return;
+		}
+		System.out.println("Please enter your address: ");
+		String address = "";
+		address = scanner.nextLine();
+		if (address.isEmpty()) {
+			System.out.println("please enter your address");
+			addTechnician(currentUser);
+			return;
+		}
+		else {
+			if (address.contains(";") || address.contains("\"") || address.contains(":") || address.contains("\'")) {
+				System.out.println("last name cannot contain special characters ';', ', '\"', or ':' ");
+				addTechnician(currentUser);
+				return;
+			}
+		}
+		System.out.println("Please enter the year you were born: ");
+		String buffer = scanner.nextLine();
+		int bufferInt = -1;
+		try {
+			bufferInt = Integer.parseInt(buffer);
+		}
+		catch (NumberFormatException ex){
+          System.out.println("Please Enter an Integer.");
+          addTechnician(currentUser);
+          return;
+        }
+		if (bufferInt > 3000 || bufferInt < 1000) {
+			System.out.println("Please Enter a year that you were born.");
+			addTechnician(currentUser);
+		}
+		int year = bufferInt;
+
+		System.out.println("Please enter the month of the year you were born as a digit (i.e. 1 as January and 12 as December: ");
+		buffer = scanner.nextLine();
+		try{
+			bufferInt = Integer.parseInt(buffer);
+	    }
+	    catch (NumberFormatException ex){
+	       System.out.println("Please Enter an Integer.");
+	       return;
+	    }
+		int month = bufferInt;
+		if (month > 12 || month < 1) {
+			System.out.println("Please enter a valid month.");
+		}
+		System.out.println("Please enter the day of the year you were born: ");
+		buffer = scanner.nextLine();
+		try{
+			bufferInt = Integer.parseInt(buffer);
+	    }
+	    catch (NumberFormatException ex){
+	       System.out.println("Please Enter an Integer.");
+	       return;
+	    }
+		int day = bufferInt;
+		if (day > 31 || day < 1) {
+			System.out.println("Please enter a valid day of the month.");
+		}
+		String date = formatDate(year, month, day);
 		
+		System.out.println("Please enter your the technician's shift type: ");
+		String shift = "";
+		shift = scanner.nextLine();
+		if (shift.isEmpty()) {
+			System.out.println("please enter your first name");
+			addTechnician(currentUser);
+			return;
+		}
+		else {
+			if (shift.contains(";") || shift.contains("\"") || shift.contains(":") || shift.contains("\'")) {
+				System.out.println("first name cannot contain special characters ';', ', '\"', or ':' ");
+				addTechnician(currentUser);
+				return;
+			}
+		}
+		
+		
+		
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "INSERT INTO \"users\" (\"gender\", \"firstname\", \"lastname\", \"username\", \"password\", \"address\", \"dob\") "
+					+ "VALUES ('" + gender + "', '" + firstName + "', '" + lastName + "', '" +  newUsername + "', '" + accountPassword + "', '" 
+					+ address + "', '" + date + "');";      
+			Statement stmt = connection.createStatement();
+			int rows = stmt.executeUpdate(query);
+			if (rows > 0) {
+				System.out.println("Account Successfully created!");
+			}
+			
+			connection.close();
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "INSERT INTO \"technician\" (\"gender\", \"firstname\", \"lastname\", \"username\", \"password\", \"address\", \"dob\", \"shifttype\") "
+					+ "VALUES ('" + gender + "', '" + firstName + "', '" + lastName + "', '" +  newUsername + "', '" + accountPassword + "', '" 
+					+ address + "', '" + date + "', '" + shift + "');";      
+			Statement stmt = connection.createStatement();
+			int rows = stmt.executeUpdate(query);
+			if (rows > 0) {
+				System.out.println("Account Successfully created!");
+			}
+			
+			connection.close();
+		}
+		catch (SQLException e) {
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		
+		technicianView(currentUser)
 	}
 	
 	static void technicianView(String currentUser)
@@ -348,7 +539,7 @@ public class DMVProgram {
 		}
 		if (bufferInt == 3)
 		{
-			addTechnician();
+			addTechnician(currentUser);
 		}
 		
 	}
