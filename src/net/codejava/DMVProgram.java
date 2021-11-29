@@ -213,7 +213,7 @@ public class DMVProgram {
 			Statement stmt = connection.createStatement();
 			int rows = stmt.executeUpdate(query);
 			if (rows > 0) {
-				System.out.println("Licence Created");
+				System.out.println("Licence Created \n\n");
 			}
 			
 			connection.close();
@@ -226,6 +226,90 @@ public class DMVProgram {
 		
 		technicianView(currentUser);
 		
+		
+	}
+	
+	static void registerVehicles(String currentUser)
+	{
+		int numChoices = 1;
+		Vector<String> selections = new Vector(0);
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "SELECT * FROM motorist;";
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			while(rs.next())
+			{
+				String motorist = rs.getString(1);
+				System.out.println("[" + numChoices + "]" +  motorist);
+				numChoices++;
+				String entry = motorist;
+				selections.add(entry);
+				
+			}
+			connection.close();
+		}
+		catch(SQLException e)
+		{
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		
+		System.out.println("Which motorist would you like to register a vehicle to:");
+		String buffer = scanner.nextLine();
+		int bufferInt = 0;
+		try {
+			bufferInt = Integer.parseInt(buffer);
+		}
+		catch(NumberFormatException ex)
+		{
+			System.out.println("Please Enter an Integer.");
+			issueLicense(username);
+			return;
+		}
+		if(!(bufferInt < 1 || bufferInt > numChoices))
+		{
+			System.out.println("Motorist Selected.");
+		}
+		
+		String vid = "d33223";
+		String user = selections.get(bufferInt - 1);
+		String manu = "Honda";
+		int oduo = 123445;
+		String model = "Civic";
+		int year = 2012;
+		
+		try {
+			Connection connection = DriverManager.getConnection(jdbcURL, username, password);
+			String query = "INSERT INTO vehicle (VID,owner,technician,manufacturer,oduometer,model,year) VALUES (";
+			query += "'" + vid + "',";
+			query += "'" + user + "',";
+			query += "'" + currentUser + "',";
+			query += "'" + manu + "',";
+			query += oduo + ",";
+			query += "'" + model + "',";
+			query += year + ");";
+			System.out.println(query);
+			Statement stmt = connection.createStatement();
+			int rows = stmt.executeUpdate(query);
+			if (rows > 0) {
+				System.out.println("Licence Created \n\n");
+			}
+			
+			connection.close();
+		}
+		catch(SQLException e)
+		{
+			System.out.println("Error in connecting to PostgreSQL server");
+			e.printStackTrace();
+		}
+		
+		technicianView(currentUser);
+		
+	}
+	
+	static void addTechnician()
+	{
 		
 	}
 	
@@ -257,6 +341,14 @@ public class DMVProgram {
 		if(bufferInt==1)
 		{
 			issueLicense(currentUser);
+		}
+		if (bufferInt == 2) 
+		{
+			registerVehicles( currentUser);
+		}
+		if (bufferInt == 3)
+		{
+			addTechnician();
 		}
 		
 	}
